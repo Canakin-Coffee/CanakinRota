@@ -266,7 +266,6 @@ struct CompanySignUpView: View {
                     isActive: true,
                     notes: nil,
                     unavailableDays: [],
-                    userColor: nil,
                     authorityLevel: .admin, // First user is admin
                     companyId: companyId, // Link to the new company
                     address: nil,

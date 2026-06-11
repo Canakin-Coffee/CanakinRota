@@ -8,6 +8,7 @@ struct SignInView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var authorityManager: AuthorityManager
     @EnvironmentObject private var companyContext: CompanyContext
+    @EnvironmentObject private var roleStore: RoleStore
     
     @State private var email = ""
     @State private var password = ""
@@ -301,6 +302,8 @@ struct SignInView: View {
                 authorityManager.saveCurrentUser()
                 firebaseManager.setAuthenticated(true)
                 firebaseManager.setModelContext(modelContext)
+                roleStore.setModelContext(modelContext)
+                roleStore.setCompanyContext(companyContext)
             }
             
             // Step 8: Load essentials only — shifts continue in background after sign-in

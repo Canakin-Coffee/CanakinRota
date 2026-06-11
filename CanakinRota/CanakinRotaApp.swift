@@ -114,6 +114,8 @@ struct CanakinRotaApp: App {
                 .environmentObject(employmentStore)
                 .onAppear {
                     firebaseManager.setModelContext(container.mainContext)
+                    roleStore.setModelContext(container.mainContext)
+                    roleStore.setCompanyContext(CompanyContext.shared)
                     #if os(macOS)
                     // End any Firebase keychain session before the shell can auto-restore it.
                     if Auth.auth().currentUser != nil {

@@ -8,6 +8,7 @@ struct MainAppView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var authorityManager: AuthorityManager
     @EnvironmentObject private var companyContext: CompanyContext
+    @EnvironmentObject private var roleStore: RoleStore
     @State private var isLoading = false  // Start as false so UI appears immediately
     @State private var companyExists = false
     @State private var errorMessage: String = ""
@@ -334,7 +335,6 @@ struct MainAppView: View {
                         isActive: userData["isActive"] as? Bool ?? true,
                         notes: userData["notes"] as? String,
                         unavailableDays: [],
-                        userColor: userData["userColor"] as? String,
                         authorityLevel: UserAuthorityLevel(rawValue: userData["authorityLevel"] as? String ?? "staff") ?? .staff,
                         companyId: userData["companyId"] as? String,
                         address: userData["address"] as? String,
@@ -366,6 +366,8 @@ struct MainAppView: View {
                     print("🔧 MAINAPP: Setting up Firebase sync for authenticated user: \(user.name)")
                     firebaseManager.setAuthenticated(true)
                     firebaseManager.setModelContext(modelContext)
+                    roleStore.setModelContext(modelContext)
+                    roleStore.setCompanyContext(companyContext)
                     
                     // Sign in user immediately to show UI
                     await MainActor.run {
@@ -547,7 +549,6 @@ struct MainAppView: View {
                     initials: "\(cleanFirstName.prefix(1))\(cleanSurname.prefix(1))".uppercased(),
                     email: cleanEmail,
                     isActive: true,
-                    userColor: UserColorGenerator.generateUniqueColor(),
                     authorityLevel: .admin, // This user gets ADMIN
                     companyId: companyId, // Set the company ID to link to the company
                     employmentStartDate: Date() // Set employment start to now
@@ -641,7 +642,6 @@ struct MainAppView: View {
                     "hasPassword": user.hasPassword,
                     "authorityLevel": user.authorityLevel?.rawValue ?? "admin",
                     "employmentStartDate": user.employmentStartDate as Any,
-                    "userColor": user.userColor ?? "",
                     "annualHolidayAllocation": user.annualHolidayAllocation,
                     "holidayDaysTaken": user.holidayDaysTaken,
                     "holidayYearStartDate": user.holidayYearStartDate,
@@ -878,7 +878,6 @@ struct MainAppView: View {
                     isActive: userData["isActive"] as? Bool ?? true,
                     notes: userData["notes"] as? String,
                     unavailableDays: [],
-                    userColor: userData["userColor"] as? String,
                     authorityLevel: UserAuthorityLevel(rawValue: userData["authorityLevel"] as? String ?? "staff") ?? .staff,
                     companyId: userData["companyId"] as? String,
                     address: userData["address"] as? String,
