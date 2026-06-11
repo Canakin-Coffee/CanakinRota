@@ -102,6 +102,9 @@ class RotaFirestoreSettingsManager {
 
         if hasChanges {
             try? modelContext.save()
+            if let first = (try? modelContext.fetch(descriptor))?.first {
+                EmploymentSettingsStore.shared.currentSettings = first
+            }
         }
     }
 
@@ -113,8 +116,12 @@ class RotaFirestoreSettingsManager {
         if existing.weeksPerYear != new.weeksPerYear { existing.weeksPerYear = new.weeksPerYear; hasChanges = true }
         if existing.standardWeeklyHours != new.standardWeeklyHours { existing.standardWeeklyHours = new.standardWeeklyHours; hasChanges = true }
         if existing.annualHolidayAllocation != new.annualHolidayAllocation { existing.annualHolidayAllocation = new.annualHolidayAllocation; hasChanges = true }
+        if existing.holidayAccrualRate != new.holidayAccrualRate { existing.holidayAccrualRate = new.holidayAccrualRate; hasChanges = true }
         if existing.holidayYearStartMonth != new.holidayYearStartMonth { existing.holidayYearStartMonth = new.holidayYearStartMonth; hasChanges = true }
         if existing.holidayYearStartDay != new.holidayYearStartDay { existing.holidayYearStartDay = new.holidayYearStartDay; hasChanges = true }
+        if existing.timeOffCountsAllCalendarDays != new.timeOffCountsAllCalendarDays { existing.timeOffCountsAllCalendarDays = new.timeOffCountsAllCalendarDays; hasChanges = true }
+        if existing.averageBreakHours != new.averageBreakHours { existing.averageBreakHours = new.averageBreakHours; hasChanges = true }
+        if existing.pensionRate != new.pensionRate { existing.pensionRate = new.pensionRate; hasChanges = true }
         if existing.minimumHourlyWage != new.minimumHourlyWage { existing.minimumHourlyWage = new.minimumHourlyWage; hasChanges = true }
         if existing.minimumHourlyWageHistoryData != new.minimumHourlyWageHistoryData { existing.minimumHourlyWageHistoryData = new.minimumHourlyWageHistoryData; hasChanges = true }
         if existing.defaultShiftStartHour != new.defaultShiftStartHour { existing.defaultShiftStartHour = new.defaultShiftStartHour; hasChanges = true }

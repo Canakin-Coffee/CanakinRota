@@ -52,7 +52,7 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         holidayAccrualRate: Double = 0.1207,
         holidayYearStartMonth: Int,
         holidayYearStartDay: Int,
-        timeOffCountsAllCalendarDays: Bool = true,
+        timeOffCountsAllCalendarDays: Bool = false,
         averageBreakHours: Double = 0.5,
         minimumHourlyWage: Double = 0.0,
         minimumHourlyWageHistory: [MinimumWageRateEntryDTO] = [],
@@ -205,7 +205,7 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         }
         
         let holidayAccrualRate = extractDouble("holidayAccrualRate") ?? 0.1207 // backward compatibility
-        let timeOffCountsAllCalendarDays = data["timeOffCountsAllCalendarDays"] as? Bool ?? true
+        let timeOffCountsAllCalendarDays = data["timeOffCountsAllCalendarDays"] as? Bool ?? false
 
         let minimumHourlyWage = extractDouble("minimumHourlyWage") ?? 0.0
         let minimumHourlyWageHistory: [MinimumWageRateEntryDTO] = (data["minimumHourlyWageHistory"] as? [[String: Any]] ?? []).compactMap { item in

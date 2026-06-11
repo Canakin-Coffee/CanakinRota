@@ -233,7 +233,7 @@ struct EmploymentSettingsEntryView: View {
                     )) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Holiday counts all calendar days")
-                            Text("Off = weekdays only (Mon–Fri). On = every day in the range (7-day operations).")
+                            Text("Off = only days the employee normally works (Mon–Fri by default, or their weekly availability). On = every calendar day (7-day operations).")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
