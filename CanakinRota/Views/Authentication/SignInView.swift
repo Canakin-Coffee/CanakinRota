@@ -52,34 +52,12 @@ struct SignInView: View {
                         .font(.title2)
                         .fontWeight(.semibold)
                     
-                    VStack(spacing: 16) {
-                        TextField("Email Address", text: $email)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .keyboardType(.emailAddress)
-                            .autocapitalization(.none)
-                            .disableAutocorrection(true)
-                            .disabled(isLoading)
-                        
-                        HStack {
-                            if showPassword {
-                                TextField("Password", text: $password)
-                                    .autocapitalization(.none)
-                                    .disableAutocorrection(true)
-                            } else {
-                                SecureField("Password", text: $password)
-                                    .autocapitalization(.none)
-                                    .disableAutocorrection(true)
-                            }
-                            
-                            Button(action: { showPassword.toggle() }) {
-                                Image(systemName: showPassword ? "eye.slash" : "eye")
-                                    .foregroundColor(.secondary)
-                            }
-                            .disabled(isLoading)
-                        }
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .disabled(isLoading)
+                    Form {
+                        emailField
+                        passwordField
                     }
+                    .formStyle(.grouped)
+                    .frame(maxHeight: 120)
                     
                     if !downloadProgress.isEmpty {
                         VStack(spacing: 8) {
@@ -136,6 +114,7 @@ struct SignInView: View {
                 Spacer()
             }
             .navigationBarHidden(true)
+            .onAppear(perform: loadSavedCredentials)
             .alert("Sign In Error", isPresented: $showingAlert) {
                 Button("OK") { }
             } message: {
@@ -143,6 +122,7 @@ struct SignInView: View {
             }
             .sheet(isPresented: $showingPasswordReset) {
                 PasswordResetView()
+                    .staffMacSheetChrome(minWidth: 480, minHeight: 420)
             }
             .sheet(isPresented: $showingSignUp) {
                 CompanySignUpView(onComplete: {
@@ -152,14 +132,75 @@ struct SignInView: View {
                 })
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+                .staffMacSheetChrome(minWidth: 520, minHeight: 600)
             }
         }
     }
     
+    @ViewBuilder
+    private var emailField: some View {
+        TextField("Email Address", text: $email)
+            .textContentType(.username)
+            #if os(iOS)
+            .keyboardType(.emailAddress)
+            .textInputAutocapitalization(.never)
+            #endif
+            .autocorrectionDisabled()
+            .disabled(isLoading)
+    }
+
+    @ViewBuilder
+    private var passwordField: some View {
+        #if os(macOS)
+        SecureField("Password", text: $password)
+            .textContentType(.password)
+            .autocorrectionDisabled()
+            .disabled(isLoading)
+        #else
+        HStack {
+            Group {
+                if showPassword {
+                    TextField("Password", text: $password)
+                        .textContentType(.password)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                } else {
+                    SecureField("Password", text: $password)
+                        .textContentType(.password)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                }
+            }
+
+            Button(action: { showPassword.toggle() }) {
+                Image(systemName: showPassword ? "eye.slash" : "eye")
+                    .foregroundColor(.secondary)
+            }
+            .disabled(isLoading)
+        }
+        #endif
+    }
+
     private var isFormValid: Bool {
         let cleanEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
         let cleanPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
         return !cleanEmail.isEmpty && !cleanPassword.isEmpty
+    }
+
+    private func loadSavedCredentials() {
+        guard let savedEmail = UserDefaults.standard.string(forKey: "lastSignedInEmail"),
+              !savedEmail.isEmpty else {
+            return
+        }
+        email = savedEmail
+        if let savedPassword = keychainManager.getPassword(for: savedEmail) {
+            password = savedPassword
+        }
+    }
+
+    private func saveSavedCredentials(email: String, password: String) {
+        UserDefaults.standard.set(email, forKey: "lastSignedInEmail")
+        _ = keychainManager.savePassword(password, for: email)
     }
     
     /// Simplified sign-in function
@@ -331,11 +372,8 @@ struct SignInView: View {
                 print("SYNC: Background shift download complete")
             }
             
-            // Step 12: Save credentials for auto-sign-on if enabled
-            if currentUser.allowAutoSignOn {
-                UserDefaults.standard.set(email, forKey: "lastSignedInEmail")
-                _ = keychainManager.savePassword(password, for: email)
-            }
+            // Step 12: Remember credentials for next sign-in
+            saveSavedCredentials(email: email, password: password)
             
             // Complete
             await MainActor.run {

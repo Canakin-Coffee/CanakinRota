@@ -30,6 +30,13 @@ struct StaffHomeView: View {
                         .tabItem {
                             Label("Time Off", systemImage: "beach.umbrella")
                         }
+
+                    NavigationStack {
+                        MyWorkAvailabilityView(user: user)
+                    }
+                    .tabItem {
+                        Label("Availability", systemImage: "calendar.badge.checkmark")
+                    }
                 }
             } else {
                 SignInView()

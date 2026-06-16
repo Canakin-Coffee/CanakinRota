@@ -8,6 +8,7 @@ enum RotaSchema {
         Shift.self,
         ShiftBreak.self,
         TimeOffRequest.self,
+        StaffDayAvailability.self,
         UserRolePriority.self,
         AuthorityLevelPermission.self,
         DayRoleSchedule.self,

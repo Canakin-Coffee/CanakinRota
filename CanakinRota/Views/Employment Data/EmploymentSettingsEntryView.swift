@@ -312,6 +312,7 @@ struct EmploymentSettingsEntryView: View {
                         }
                     }
                 }
+                .staffMacSheetChrome(minWidth: 480, minHeight: 360)
             }
         }
     }

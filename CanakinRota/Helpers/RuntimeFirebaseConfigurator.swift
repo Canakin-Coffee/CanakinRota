@@ -24,6 +24,11 @@ struct RuntimeFirebaseConfigurator {
         }
     }
 
+    func loadPersistedOptions() -> FirebaseOptions? {
+        guard let url = persistedPlistURL, FileManager.default.fileExists(atPath: url.path) else { return nil }
+        return FirebaseOptions(contentsOfFile: url.path)
+    }
+
     func configureFromPersistedIfAvailable() {
         guard FirebaseApp.app() == nil, let url = persistedPlistURL, FileManager.default.fileExists(atPath: url.path) else { return }
         if let options = FirebaseOptions(contentsOfFile: url.path) {

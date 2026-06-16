@@ -39,14 +39,14 @@ struct CanakinRotaApp: App {
     private static func configureFirebaseIfNeeded() {
         guard FirebaseApp.app() == nil else { return }
 
-        if let filePath = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
-           let options = FirebaseOptions(contentsOfFile: filePath) {
+        if let options = bundledFirebaseOptions() {
+            FirebaseApp.configure(options: options)
+        } else if let options = RuntimeFirebaseConfigurator.shared.loadPersistedOptions(),
+                  Self.validFirebaseOptions(options) {
             FirebaseApp.configure(options: options)
         } else {
-            RuntimeFirebaseConfigurator.shared.configureFromPersistedIfAvailable()
-            if FirebaseApp.app() == nil {
-                FirebaseApp.configure()
-            }
+            print("❌ FIREBASE: No valid GoogleService-Info.plist found (missing or empty API_KEY)")
+            FirebaseApp.configure()
         }
 
         #if os(macOS)
@@ -55,6 +55,20 @@ struct CanakinRotaApp: App {
         firestoreSettings.isPersistenceEnabled = false
         firestore.settings = firestoreSettings
         #endif
+    }
+
+    private static func bundledFirebaseOptions() -> FirebaseOptions? {
+        guard let filePath = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
+              let options = FirebaseOptions(contentsOfFile: filePath) else {
+            return nil
+        }
+        return validFirebaseOptions(options) ? options : nil
+    }
+
+    private static func validFirebaseOptions(_ options: FirebaseOptions) -> Bool {
+        guard let apiKey = options.apiKey, !apiKey.isEmpty else { return false }
+        guard let projectID = options.projectID, !projectID.isEmpty else { return false }
+        return true
     }
 
     private static func makeModelContainer() -> ModelContainer {
