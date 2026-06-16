@@ -122,7 +122,7 @@ struct SignInView: View {
             }
             .sheet(isPresented: $showingPasswordReset) {
                 PasswordResetView()
-                    .staffMacSheetChrome(minWidth: 480, minHeight: 420)
+                    .staffMacSheetChrome(minWidth: 480, minHeight: 420, showsCloseButton: false)
             }
             .sheet(isPresented: $showingSignUp) {
                 CompanySignUpView(onComplete: {
@@ -132,7 +132,7 @@ struct SignInView: View {
                 })
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
-                .staffMacSheetChrome(minWidth: 520, minHeight: 600)
+                .staffMacSheetChrome(minWidth: 520, minHeight: 600, showsCloseButton: false)
             }
         }
     }

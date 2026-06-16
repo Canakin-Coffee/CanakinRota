@@ -26,7 +26,9 @@ struct StaffHomeView: View {
                             Label("Clock", systemImage: "clock.fill")
                         }
 
-                    PersonalTimeOffRequestView(user: user)
+                    NavigationStack {
+                        PersonalTimeOffRequestView(user: user)
+                    }
                         .tabItem {
                             Label("Time Off", systemImage: "beach.umbrella")
                         }

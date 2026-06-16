@@ -61,7 +61,7 @@ struct SettingsTabView: View {
         }
         .sheet(isPresented: $showingPasswordChange) {
             FirebasePasswordChangeView()
-                .staffMacSheetChrome(minWidth: 480, minHeight: 420)
+                .staffMacSheetChrome(minWidth: 480, minHeight: 420, showsCloseButton: false)
         }
     }
 }
