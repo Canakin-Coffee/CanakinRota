@@ -1,8 +1,10 @@
 import SwiftUI
+import SwiftData
 import CanakinStaffShared
 
 /// iOS staff shell: sign in, then rota and shift tools.
 struct StaffHomeView: View {
+    @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var authorityManager: AuthorityManager
 
     var body: some View {
@@ -21,23 +23,20 @@ struct StaffHomeView: View {
                         Label("Rota", systemImage: "calendar.badge.clock")
                     }
 
-                    TimeTrackerView(user: user)
-                        .tabItem {
-                            Label("Clock", systemImage: "clock.fill")
-                        }
-
-                    NavigationStack {
-                        PersonalTimeOffRequestView(user: user)
-                    }
-                        .tabItem {
-                            Label("Time Off", systemImage: "beach.umbrella")
-                        }
-
                     NavigationStack {
                         MyWorkAvailabilityView(user: user)
                     }
                     .tabItem {
                         Label("Availability", systemImage: "calendar.badge.checkmark")
+                    }
+
+                    NavigationStack {
+                        SettingsTabView(onSignOut: {
+                            authorityManager.signOut(modelContext: modelContext)
+                        })
+                    }
+                    .tabItem {
+                        Label("Settings", systemImage: "gearshape")
                     }
                 }
             } else {

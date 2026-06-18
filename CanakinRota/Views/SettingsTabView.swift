@@ -37,10 +37,15 @@ struct SettingsTabView: View {
                 }
             }
 
-            Section {
-                NavigationLink("Employment Settings") {
-                    EmploymentSettingsEntryView()
+            if authorityManager.canManageEmploymentDetails() {
+                Section("Company Settings") {
+                    NavigationLink("Employment Settings") {
+                        EmploymentSettingsEntryView()
+                    }
                 }
+            }
+
+            Section {
                 Button("Change Password") {
                     showingPasswordChange = true
                 }

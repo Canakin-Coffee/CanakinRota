@@ -119,6 +119,7 @@ class RotaFirestoreSettingsManager {
         if existing.holidayAccrualRate != new.holidayAccrualRate { existing.holidayAccrualRate = new.holidayAccrualRate; hasChanges = true }
         if existing.holidayYearStartMonth != new.holidayYearStartMonth { existing.holidayYearStartMonth = new.holidayYearStartMonth; hasChanges = true }
         if existing.holidayYearStartDay != new.holidayYearStartDay { existing.holidayYearStartDay = new.holidayYearStartDay; hasChanges = true }
+        if existing.payrollRunDay != new.payrollRunDay { existing.payrollRunDay = new.payrollRunDay; hasChanges = true }
         if existing.timeOffCountsAllCalendarDays != new.timeOffCountsAllCalendarDays { existing.timeOffCountsAllCalendarDays = new.timeOffCountsAllCalendarDays; hasChanges = true }
         if existing.averageBreakHours != new.averageBreakHours { existing.averageBreakHours = new.averageBreakHours; hasChanges = true }
         if existing.pensionRate != new.pensionRate { existing.pensionRate = new.pensionRate; hasChanges = true }

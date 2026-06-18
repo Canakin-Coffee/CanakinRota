@@ -26,93 +26,93 @@ struct SignInView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 30) {
-                // App Logo and Title
-                VStack(spacing: 16) {
-                    Image(systemName: "calendar.badge.clock")
-                        .font(.system(size: 72))
-                        .foregroundStyle(.blue)
-                        .frame(width: 120, height: 120)
+            ScrollView {
+                VStack(spacing: 30) {
+                    // App Logo and Title
+                    VStack(spacing: 16) {
+                        Image(systemName: "calendar.badge.clock")
+                            .font(.system(size: 72))
+                            .foregroundStyle(.blue)
+                            .frame(width: 120, height: 120)
 
-                    Text("Canakin Rota")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
+                        Text("Canakin Rota")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(.primary)
 
-                    Text("Staff scheduling & shifts")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                // Sign In Form
-                VStack(spacing: 20) {
-                    Text("Sign In")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                    
-                    Form {
-                        emailField
-                        passwordField
+                        Text("Staff scheduling & shifts")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
                     }
-                    .formStyle(.grouped)
-                    .frame(maxHeight: 120)
-                    
-                    if !downloadProgress.isEmpty {
-                        VStack(spacing: 8) {
-                            ProgressView()
-                            Text(downloadProgress)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                    .padding(.top, 24)
+
+                    // Sign In Form
+                    VStack(spacing: 20) {
+                        Text("Sign In")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+
+                        VStack(spacing: 12) {
+                            emailField
+                            passwordField
                         }
-                        .padding(.vertical, 8)
-                    }
-                    
-                    Button(action: signIn) {
-                        HStack {
-                            if isLoading {
+
+                        if !downloadProgress.isEmpty {
+                            VStack(spacing: 8) {
                                 ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    .scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "arrow.right.circle.fill")
+                                Text(downloadProgress)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                             }
-                            
-                            Text(isLoading ? "Signing In..." : "Sign In")
-                                .fontWeight(.semibold)
+                            .padding(.vertical, 8)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(isFormValid ? Color.blue : Color.gray)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+
+                        Button(action: signIn) {
+                            HStack {
+                                if isLoading {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "arrow.right.circle.fill")
+                                }
+
+                                Text(isLoading ? "Signing In..." : "Sign In")
+                                    .fontWeight(.semibold)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(isFormValid ? Color.blue : Color.gray)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                        }
+                        .disabled(!isFormValid || isLoading)
+
+                        // Forgot Password Button
+                        Button(action: { showingPasswordReset = true }) {
+                            Text("Forgot Password?")
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                        }
+                        .disabled(isLoading)
+
+                        // Sign Up / Create Company Option
+                        Divider()
+                            .padding(.vertical, 8)
+
+                        Button(action: { showingSignUp = true }) {
+                            Text("Don't have an account? Create a new company")
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                        }
+                        .disabled(isLoading)
                     }
-                    .disabled(!isFormValid || isLoading)
-                    
-                    // Forgot Password Button
-                    Button(action: { showingPasswordReset = true }) {
-                        Text("Forgot Password?")
-                            .font(.caption)
-                            .foregroundColor(.blue)
-                    }
-                    .disabled(isLoading)
-                    
-                    // Sign Up / Create Company Option
-                    Divider()
-                        .padding(.vertical, 8)
-                    
-                    Button(action: { showingSignUp = true }) {
-                        Text("Don't have an account? Create a new company")
-                            .font(.caption)
-                            .foregroundColor(.blue)
-                    }
-                    .disabled(isLoading)
                 }
                 .padding(.horizontal, 40)
-                
-                Spacer()
+                .padding(.bottom, 32)
+                .frame(maxWidth: .infinity)
             }
+            .scrollDismissesKeyboard(.interactively)
             .navigationBarHidden(true)
             .onAppear(perform: loadSavedCredentials)
             .alert("Sign In Error", isPresented: $showingAlert) {
@@ -140,6 +140,7 @@ struct SignInView: View {
     @ViewBuilder
     private var emailField: some View {
         TextField("Email Address", text: $email)
+            .textFieldStyle(.roundedBorder)
             .textContentType(.username)
             #if os(iOS)
             .keyboardType(.emailAddress)
@@ -147,17 +148,21 @@ struct SignInView: View {
             #endif
             .autocorrectionDisabled()
             .disabled(isLoading)
+            .submitLabel(.next)
     }
 
     @ViewBuilder
     private var passwordField: some View {
         #if os(macOS)
         SecureField("Password", text: $password)
+            .textFieldStyle(.roundedBorder)
             .textContentType(.password)
             .autocorrectionDisabled()
             .disabled(isLoading)
+            .submitLabel(.go)
+            .onSubmit(signIn)
         #else
-        HStack {
+        ZStack(alignment: .trailing) {
             Group {
                 if showPassword {
                     TextField("Password", text: $password)
@@ -171,11 +176,17 @@ struct SignInView: View {
                         .autocorrectionDisabled()
                 }
             }
+            .textFieldStyle(.roundedBorder)
+            .padding(.trailing, 36)
+            .disabled(isLoading)
+            .submitLabel(.go)
+            .onSubmit(signIn)
 
             Button(action: { showPassword.toggle() }) {
                 Image(systemName: showPassword ? "eye.slash" : "eye")
                     .foregroundColor(.secondary)
             }
+            .padding(.trailing, 8)
             .disabled(isLoading)
         }
         #endif

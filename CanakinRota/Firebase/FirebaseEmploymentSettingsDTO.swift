@@ -27,6 +27,7 @@ struct FirebaseEmploymentSettingsDTO: Codable {
     let holidayAccrualRate: Double
     let holidayYearStartMonth: Int
     let holidayYearStartDay: Int
+    let payrollRunDay: Int
     let timeOffCountsAllCalendarDays: Bool
     let averageBreakHours: Double
     let minimumHourlyWage: Double
@@ -52,6 +53,7 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         holidayAccrualRate: Double = 0.1207,
         holidayYearStartMonth: Int,
         holidayYearStartDay: Int,
+        payrollRunDay: Int = 31,
         timeOffCountsAllCalendarDays: Bool = false,
         averageBreakHours: Double = 0.5,
         minimumHourlyWage: Double = 0.0,
@@ -75,6 +77,7 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         self.holidayAccrualRate = holidayAccrualRate
         self.holidayYearStartMonth = holidayYearStartMonth
         self.holidayYearStartDay = holidayYearStartDay
+        self.payrollRunDay = payrollRunDay
         self.timeOffCountsAllCalendarDays = timeOffCountsAllCalendarDays
         self.averageBreakHours = averageBreakHours
         self.minimumHourlyWage = minimumHourlyWage
@@ -100,6 +103,7 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         self.holidayAccrualRate = employmentSettings.holidayAccrualRate
         self.holidayYearStartMonth = employmentSettings.holidayYearStartMonth
         self.holidayYearStartDay = employmentSettings.holidayYearStartDay
+        self.payrollRunDay = employmentSettings.payrollRunDay
         self.timeOffCountsAllCalendarDays = employmentSettings.timeOffCountsAllCalendarDays
         self.averageBreakHours = employmentSettings.averageBreakHours
         self.minimumHourlyWage = employmentSettings.minimumHourlyWage
@@ -139,6 +143,7 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         )
         settings.createdAt = createdAt
         settings.updatedAt = updatedAt
+        settings.payrollRunDay = payrollRunDay
         settings.minimumHourlyWageHistory = minimumHourlyWageHistory.map {
             EmploymentSettings.MinimumWageRateEntry(effectiveFrom: $0.effectiveFrom, rate: $0.rate)
         }
@@ -159,6 +164,7 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             "holidayAccrualRate": holidayAccrualRate,
             "holidayYearStartMonth": holidayYearStartMonth,
             "holidayYearStartDay": holidayYearStartDay,
+            "payrollRunDay": payrollRunDay,
             "timeOffCountsAllCalendarDays": timeOffCountsAllCalendarDays,
             "averageBreakHours": averageBreakHours,
             "minimumHourlyWage": minimumHourlyWage,
@@ -206,6 +212,11 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         
         let holidayAccrualRate = extractDouble("holidayAccrualRate") ?? 0.1207 // backward compatibility
         let timeOffCountsAllCalendarDays = data["timeOffCountsAllCalendarDays"] as? Bool ?? false
+        let payrollRunDay: Int = {
+            if let intValue = data["payrollRunDay"] as? Int { return intValue }
+            if let doubleValue = data["payrollRunDay"] as? Double { return Int(doubleValue) }
+            return 31
+        }()
 
         let minimumHourlyWage = extractDouble("minimumHourlyWage") ?? 0.0
         let minimumHourlyWageHistory: [MinimumWageRateEntryDTO] = (data["minimumHourlyWageHistory"] as? [[String: Any]] ?? []).compactMap { item in
@@ -257,6 +268,7 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             holidayAccrualRate: holidayAccrualRate,
             holidayYearStartMonth: holidayYearStartMonth,
             holidayYearStartDay: holidayYearStartDay,
+            payrollRunDay: payrollRunDay,
             timeOffCountsAllCalendarDays: timeOffCountsAllCalendarDays,
             averageBreakHours: averageBreakHours,
             minimumHourlyWage: minimumHourlyWage,
