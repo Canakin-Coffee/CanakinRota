@@ -116,16 +116,27 @@ class FirebaseManager: ObservableObject {
     }
     
     func createAuthAccountForImportedUser(email: String, name: String) async throws -> String {
+        let normalized = StaffFirebaseProvisioner.normalizedEmail(email)
         let defaultPassword = generateSecureDefaultPassword()
-        
+        let provisioningAuth = try StaffFirebaseProvisioner.provisioningAuth()
+
         do {
-            let result = try await auth.createUser(withEmail: email, password: defaultPassword)
+            let result = try await provisioningAuth.createUser(withEmail: normalized, password: defaultPassword)
             let firebaseUID = result.user.uid
-            
-            try await auth.sendPasswordReset(withEmail: email)
-            
+            print("✅ Created Firebase Auth account \(firebaseUID) for \(normalized)")
+
+            try provisioningAuth.signOut()
+            try await resetPassword(email: normalized)
+            print("📧 Password setup email requested for new account \(normalized)")
+
             return firebaseUID
         } catch {
+            if StaffFirebaseProvisioner.isEmailAlreadyInUse(error) {
+                print("ℹ️ Firebase Auth account already exists for \(normalized); sending password reset")
+                try await resetPassword(email: normalized)
+                throw StaffAuthEmailAlreadyInUseError(email: normalized)
+            }
+            print("❌ Failed to create Firebase Auth account for \(normalized): \(error.localizedDescription)")
             throw error
         }
     }
@@ -145,7 +156,10 @@ class FirebaseManager: ObservableObject {
     }
     
     func resetPassword(email: String) async throws {
-        try await auth.sendPasswordReset(withEmail: email)
+        let normalized = StaffFirebaseProvisioner.normalizedEmail(email)
+        print("📧 Requesting Firebase password reset for \(normalized)")
+        try await StaffFirebaseProvisioner.sendPasswordReset(using: auth, email: normalized)
+        print("✅ Firebase accepted password reset request for \(normalized)")
     }
     
     
