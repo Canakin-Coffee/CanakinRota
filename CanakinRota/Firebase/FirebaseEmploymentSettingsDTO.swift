@@ -33,6 +33,10 @@ struct FirebaseEmploymentSettingsDTO: Codable {
     let holidayYearStartDay: Int
     let payrollRunDay: Int
     let timeOffCountsAllCalendarDays: Bool
+    let clockInGeofenceEnabled: Bool
+    let clockInGeofenceLatitude: Double
+    let clockInGeofenceLongitude: Double
+    let clockInGeofenceRadiusMetres: Double
     let minimumHourlyWage: Double
     let minimumHourlyWageHistory: [MinimumWageRateEntryDTO]
     let minimumWageBandHistory: [MinimumWageBandRateEntryDTO]
@@ -55,6 +59,10 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         holidayYearStartDay: Int,
         payrollRunDay: Int = 31,
         timeOffCountsAllCalendarDays: Bool = false,
+        clockInGeofenceEnabled: Bool = false,
+        clockInGeofenceLatitude: Double = 0,
+        clockInGeofenceLongitude: Double = 0,
+        clockInGeofenceRadiusMetres: Double = 50,
         minimumHourlyWage: Double = 0.0,
         minimumHourlyWageHistory: [MinimumWageRateEntryDTO] = [],
         minimumWageBandHistory: [MinimumWageBandRateEntryDTO] = [],
@@ -76,6 +84,10 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         self.holidayYearStartDay = holidayYearStartDay
         self.payrollRunDay = payrollRunDay
         self.timeOffCountsAllCalendarDays = timeOffCountsAllCalendarDays
+        self.clockInGeofenceEnabled = clockInGeofenceEnabled
+        self.clockInGeofenceLatitude = clockInGeofenceLatitude
+        self.clockInGeofenceLongitude = clockInGeofenceLongitude
+        self.clockInGeofenceRadiusMetres = clockInGeofenceRadiusMetres
         self.minimumHourlyWage = minimumHourlyWage
         self.minimumHourlyWageHistory = minimumHourlyWageHistory
         self.minimumWageBandHistory = minimumWageBandHistory
@@ -99,6 +111,10 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         self.holidayYearStartDay = employmentSettings.holidayYearStartDay
         self.payrollRunDay = employmentSettings.payrollRunDay
         self.timeOffCountsAllCalendarDays = employmentSettings.timeOffCountsAllCalendarDays
+        self.clockInGeofenceEnabled = employmentSettings.clockInGeofenceEnabled
+        self.clockInGeofenceLatitude = employmentSettings.clockInGeofenceLatitude
+        self.clockInGeofenceLongitude = employmentSettings.clockInGeofenceLongitude
+        self.clockInGeofenceRadiusMetres = employmentSettings.clockInGeofenceRadiusMetres
         self.minimumHourlyWage = employmentSettings.minimumHourlyWage(on: Date())
         self.minimumHourlyWageHistory = employmentSettings.minimumHourlyWageHistory.map {
             MinimumWageRateEntryDTO(effectiveFrom: $0.effectiveFrom, rate: $0.rate)
@@ -132,6 +148,10 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         settings.createdAt = createdAt
         settings.updatedAt = updatedAt
         settings.payrollRunDay = payrollRunDay
+        settings.clockInGeofenceEnabled = clockInGeofenceEnabled
+        settings.clockInGeofenceLatitude = clockInGeofenceLatitude
+        settings.clockInGeofenceLongitude = clockInGeofenceLongitude
+        settings.clockInGeofenceRadiusMetres = clockInGeofenceRadiusMetres
         settings.minimumHourlyWageHistory = minimumHourlyWageHistory.map {
             EmploymentSettings.MinimumWageRateEntry(effectiveFrom: $0.effectiveFrom, rate: $0.rate)
         }
@@ -162,6 +182,10 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             "holidayYearStartDay": holidayYearStartDay,
             "payrollRunDay": payrollRunDay,
             "timeOffCountsAllCalendarDays": timeOffCountsAllCalendarDays,
+            "clockInGeofenceEnabled": clockInGeofenceEnabled,
+            "clockInGeofenceLatitude": clockInGeofenceLatitude,
+            "clockInGeofenceLongitude": clockInGeofenceLongitude,
+            "clockInGeofenceRadiusMetres": clockInGeofenceRadiusMetres,
             "minimumHourlyWage": minimumHourlyWage,
             "minimumHourlyWageHistory": minimumHourlyWageHistory.map { [
                 "effectiveFrom": Timestamp(date: $0.effectiveFrom),
@@ -211,6 +235,22 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             if let intValue = data["payrollRunDay"] as? Int { return intValue }
             if let doubleValue = data["payrollRunDay"] as? Double { return Int(doubleValue) }
             return 31
+        }()
+        let clockInGeofenceEnabled = data["clockInGeofenceEnabled"] as? Bool ?? false
+        let clockInGeofenceLatitude: Double = {
+            if let value = data["clockInGeofenceLatitude"] as? Double { return value }
+            if let value = data["clockInGeofenceLatitude"] as? Int { return Double(value) }
+            return 0
+        }()
+        let clockInGeofenceLongitude: Double = {
+            if let value = data["clockInGeofenceLongitude"] as? Double { return value }
+            if let value = data["clockInGeofenceLongitude"] as? Int { return Double(value) }
+            return 0
+        }()
+        let clockInGeofenceRadiusMetres: Double = {
+            if let value = data["clockInGeofenceRadiusMetres"] as? Double { return value }
+            if let value = data["clockInGeofenceRadiusMetres"] as? Int { return Double(value) }
+            return 50
         }()
 
         let minimumHourlyWage = extractDouble("minimumHourlyWage") ?? 0.0
@@ -276,6 +316,10 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             holidayYearStartDay: holidayYearStartDay,
             payrollRunDay: payrollRunDay,
             timeOffCountsAllCalendarDays: timeOffCountsAllCalendarDays,
+            clockInGeofenceEnabled: clockInGeofenceEnabled,
+            clockInGeofenceLatitude: clockInGeofenceLatitude,
+            clockInGeofenceLongitude: clockInGeofenceLongitude,
+            clockInGeofenceRadiusMetres: clockInGeofenceRadiusMetres,
             minimumHourlyWage: minimumHourlyWage,
             minimumHourlyWageHistory: minimumHourlyWageHistory,
             minimumWageBandHistory: minimumWageBandHistory,

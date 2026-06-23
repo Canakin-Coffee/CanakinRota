@@ -121,6 +121,10 @@ class RotaFirestoreSettingsManager {
         if existing.holidayYearStartDay != new.holidayYearStartDay { existing.holidayYearStartDay = new.holidayYearStartDay; hasChanges = true }
         if existing.payrollRunDay != new.payrollRunDay { existing.payrollRunDay = new.payrollRunDay; hasChanges = true }
         if existing.timeOffCountsAllCalendarDays != new.timeOffCountsAllCalendarDays { existing.timeOffCountsAllCalendarDays = new.timeOffCountsAllCalendarDays; hasChanges = true }
+        if existing.clockInGeofenceEnabled != new.clockInGeofenceEnabled { existing.clockInGeofenceEnabled = new.clockInGeofenceEnabled; hasChanges = true }
+        if existing.clockInGeofenceLatitude != new.clockInGeofenceLatitude { existing.clockInGeofenceLatitude = new.clockInGeofenceLatitude; hasChanges = true }
+        if existing.clockInGeofenceLongitude != new.clockInGeofenceLongitude { existing.clockInGeofenceLongitude = new.clockInGeofenceLongitude; hasChanges = true }
+        if existing.clockInGeofenceRadiusMetres != new.clockInGeofenceRadiusMetres { existing.clockInGeofenceRadiusMetres = new.clockInGeofenceRadiusMetres; hasChanges = true }
         if existing.pensionRate != new.pensionRate { existing.pensionRate = new.pensionRate; hasChanges = true }
         if existing.minimumHourlyWage != new.minimumHourlyWage { existing.minimumHourlyWage = new.minimumHourlyWage; hasChanges = true }
         if existing.minimumHourlyWageHistoryData != new.minimumHourlyWageHistoryData { existing.minimumHourlyWageHistoryData = new.minimumHourlyWageHistoryData; hasChanges = true }
