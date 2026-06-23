@@ -1,17 +1,21 @@
 //
-import os
 //  FirebaseEmploymentSettingsDTO.swift
-//  CanakinCafe
-//
-//  Created by Lee Simmons on 04/04/2025.
+//  CanakinRota
 //
 
 import Foundation
+import os
 import FirebaseFirestore
 import CanakinStaffShared
 
 struct FirebaseEmploymentSettingsDTO: Codable {
     struct MinimumWageRateEntryDTO: Codable {
+        let effectiveFrom: Date
+        let rate: Double
+    }
+
+    struct MinimumWageBandRateEntryDTO: Codable {
+        let band: String
         let effectiveFrom: Date
         let rate: Double
     }
@@ -29,18 +33,14 @@ struct FirebaseEmploymentSettingsDTO: Codable {
     let holidayYearStartDay: Int
     let payrollRunDay: Int
     let timeOffCountsAllCalendarDays: Bool
-    let averageBreakHours: Double
     let minimumHourlyWage: Double
     let minimumHourlyWageHistory: [MinimumWageRateEntryDTO]
-    let defaultShiftStartHour: Int
-    let defaultShiftStartMinute: Int
-    let defaultShiftEndHour: Int
-    let defaultShiftEndMinute: Int
+    let minimumWageBandHistory: [MinimumWageBandRateEntryDTO]
+    let recipeLabourPlanningBand: String
     let createdAt: Date
     let updatedAt: Date
     let manuallyAdded: Bool
     
-    // Custom initializer for creating from individual values
     init(
         id: String,
         companyId: String?,
@@ -55,13 +55,10 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         holidayYearStartDay: Int,
         payrollRunDay: Int = 31,
         timeOffCountsAllCalendarDays: Bool = false,
-        averageBreakHours: Double = 0.5,
         minimumHourlyWage: Double = 0.0,
         minimumHourlyWageHistory: [MinimumWageRateEntryDTO] = [],
-        defaultShiftStartHour: Int,
-        defaultShiftStartMinute: Int,
-        defaultShiftEndHour: Int,
-        defaultShiftEndMinute: Int,
+        minimumWageBandHistory: [MinimumWageBandRateEntryDTO] = [],
+        recipeLabourPlanningBand: String = MinimumWageAgeBand.age21AndOver.rawValue,
         createdAt: Date,
         updatedAt: Date,
         manuallyAdded: Bool
@@ -79,13 +76,10 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         self.holidayYearStartDay = holidayYearStartDay
         self.payrollRunDay = payrollRunDay
         self.timeOffCountsAllCalendarDays = timeOffCountsAllCalendarDays
-        self.averageBreakHours = averageBreakHours
         self.minimumHourlyWage = minimumHourlyWage
         self.minimumHourlyWageHistory = minimumHourlyWageHistory
-        self.defaultShiftStartHour = defaultShiftStartHour
-        self.defaultShiftStartMinute = defaultShiftStartMinute
-        self.defaultShiftEndHour = defaultShiftEndHour
-        self.defaultShiftEndMinute = defaultShiftEndMinute
+        self.minimumWageBandHistory = minimumWageBandHistory
+        self.recipeLabourPlanningBand = recipeLabourPlanningBand
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.manuallyAdded = manuallyAdded
@@ -105,15 +99,14 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         self.holidayYearStartDay = employmentSettings.holidayYearStartDay
         self.payrollRunDay = employmentSettings.payrollRunDay
         self.timeOffCountsAllCalendarDays = employmentSettings.timeOffCountsAllCalendarDays
-        self.averageBreakHours = employmentSettings.averageBreakHours
-        self.minimumHourlyWage = employmentSettings.minimumHourlyWage
+        self.minimumHourlyWage = employmentSettings.minimumHourlyWage(on: Date())
         self.minimumHourlyWageHistory = employmentSettings.minimumHourlyWageHistory.map {
             MinimumWageRateEntryDTO(effectiveFrom: $0.effectiveFrom, rate: $0.rate)
         }
-        self.defaultShiftStartHour = employmentSettings.defaultShiftStartHour
-        self.defaultShiftStartMinute = employmentSettings.defaultShiftStartMinute
-        self.defaultShiftEndHour = employmentSettings.defaultShiftEndHour
-        self.defaultShiftEndMinute = employmentSettings.defaultShiftEndMinute
+        self.minimumWageBandHistory = employmentSettings.minimumWageBandHistory.map {
+            MinimumWageBandRateEntryDTO(band: $0.bandRaw, effectiveFrom: $0.effectiveFrom, rate: $0.rate)
+        }
+        self.recipeLabourPlanningBand = employmentSettings.recipeLabourPlanningBandRaw
         self.createdAt = employmentSettings.createdAt
         self.updatedAt = employmentSettings.updatedAt
         self.manuallyAdded = employmentSettings.manuallyAdded
@@ -132,12 +125,7 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             holidayYearStartMonth: holidayYearStartMonth,
             holidayYearStartDay: holidayYearStartDay,
             timeOffCountsAllCalendarDays: timeOffCountsAllCalendarDays,
-            averageBreakHours: averageBreakHours,
             minimumHourlyWage: minimumHourlyWage,
-            defaultShiftStartHour: defaultShiftStartHour,
-            defaultShiftStartMinute: defaultShiftStartMinute,
-            defaultShiftEndHour: defaultShiftEndHour,
-            defaultShiftEndMinute: defaultShiftEndMinute,
             manuallyAdded: manuallyAdded,
             companyId: companyId
         )
@@ -147,7 +135,15 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         settings.minimumHourlyWageHistory = minimumHourlyWageHistory.map {
             EmploymentSettings.MinimumWageRateEntry(effectiveFrom: $0.effectiveFrom, rate: $0.rate)
         }
-        settings.minimumHourlyWage = settings.minimumHourlyWage(on: Date())
+        settings.minimumWageBandHistory = minimumWageBandHistory.map {
+            MinimumWageBandRateEntry(band: MinimumWageAgeBand(rawValue: $0.band) ?? .age21AndOver, effectiveFrom: $0.effectiveFrom, rate: $0.rate)
+        }
+        settings.recipeLabourPlanningBandRaw = recipeLabourPlanningBand
+        if settings.minimumHourlyWageHistory.isEmpty {
+            settings.minimumHourlyWage = minimumHourlyWage
+        } else {
+            settings.minimumHourlyWage = settings.minimumHourlyWage(on: Date())
+        }
         return settings
     }
     
@@ -166,16 +162,17 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             "holidayYearStartDay": holidayYearStartDay,
             "payrollRunDay": payrollRunDay,
             "timeOffCountsAllCalendarDays": timeOffCountsAllCalendarDays,
-            "averageBreakHours": averageBreakHours,
             "minimumHourlyWage": minimumHourlyWage,
             "minimumHourlyWageHistory": minimumHourlyWageHistory.map { [
                 "effectiveFrom": Timestamp(date: $0.effectiveFrom),
                 "rate": $0.rate
             ] },
-            "defaultShiftStartHour": defaultShiftStartHour,
-            "defaultShiftStartMinute": defaultShiftStartMinute,
-            "defaultShiftEndHour": defaultShiftEndHour,
-            "defaultShiftEndMinute": defaultShiftEndMinute,
+            "minimumWageBandHistory": minimumWageBandHistory.map { [
+                "band": $0.band,
+                "effectiveFrom": Timestamp(date: $0.effectiveFrom),
+                "rate": $0.rate
+            ] },
+            "recipeLabourPlanningBand": recipeLabourPlanningBand,
             "createdAt": Timestamp(date: createdAt),
             "updatedAt": Timestamp(date: updatedAt),
             "manuallyAdded": manuallyAdded
@@ -188,7 +185,6 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             return nil
         }
         
-        // Helper to safely extract Double values (handles both Int and Double)
         func extractDouble(_ key: String) -> Double? {
             if let doubleValue = data[key] as? Double {
                 return doubleValue
@@ -199,7 +195,6 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             return nil
         }
         
-        // Helper to safely extract Int values
         func extractInt(_ key: String) -> Int? {
             if let intValue = data[key] as? Int {
                 return intValue
@@ -210,7 +205,7 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             return nil
         }
         
-        let holidayAccrualRate = extractDouble("holidayAccrualRate") ?? 0.1207 // backward compatibility
+        let holidayAccrualRate = extractDouble("holidayAccrualRate") ?? 0.1207
         let timeOffCountsAllCalendarDays = data["timeOffCountsAllCalendarDays"] as? Bool ?? false
         let payrollRunDay: Int = {
             if let intValue = data["payrollRunDay"] as? Int { return intValue }
@@ -232,6 +227,22 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             return MinimumWageRateEntryDTO(effectiveFrom: date, rate: rate)
         }
 
+        let minimumWageBandHistory: [MinimumWageBandRateEntryDTO] = (data["minimumWageBandHistory"] as? [[String: Any]] ?? []).compactMap { item in
+            guard let band = item["band"] as? String else { return nil }
+            let date = (item["effectiveFrom"] as? Timestamp)?.dateValue() ?? Date.distantPast
+            let rate: Double
+            if let value = item["rate"] as? Double {
+                rate = value
+            } else if let value = item["rate"] as? Int {
+                rate = Double(value)
+            } else {
+                return nil
+            }
+            return MinimumWageBandRateEntryDTO(band: band, effectiveFrom: date, rate: rate)
+        }
+
+        let recipeLabourPlanningBand = data["recipeLabourPlanningBand"] as? String ?? MinimumWageAgeBand.age21AndOver.rawValue
+
         guard let employerNIRate = extractDouble("employerNIRate"),
               let niThresholdPerYear = extractDouble("niThresholdPerYear"),
               let weeksPerYear = extractDouble("weeksPerYear"),
@@ -240,11 +251,6 @@ struct FirebaseEmploymentSettingsDTO: Codable {
               let annualHolidayAllocation = extractDouble("annualHolidayAllocation"),
               let holidayYearStartMonth = extractInt("holidayYearStartMonth"),
               let holidayYearStartDay = extractInt("holidayYearStartDay"),
-              let averageBreakHours = extractDouble("averageBreakHours"), // Default to 0.5 if missing (backward compatibility)
-              let defaultShiftStartHour = extractInt("defaultShiftStartHour"),
-              let defaultShiftStartMinute = extractInt("defaultShiftStartMinute"),
-              let defaultShiftEndHour = extractInt("defaultShiftEndHour"),
-              let defaultShiftEndMinute = extractInt("defaultShiftEndMinute"),
               let manuallyAdded = data["manuallyAdded"] as? Bool else {
             AppLog.sync.error("Employment Settings: Failed to parse document \(documentId) - one or more required fields missing")
             return nil
@@ -270,16 +276,13 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             holidayYearStartDay: holidayYearStartDay,
             payrollRunDay: payrollRunDay,
             timeOffCountsAllCalendarDays: timeOffCountsAllCalendarDays,
-            averageBreakHours: averageBreakHours,
             minimumHourlyWage: minimumHourlyWage,
             minimumHourlyWageHistory: minimumHourlyWageHistory,
-            defaultShiftStartHour: defaultShiftStartHour,
-            defaultShiftStartMinute: defaultShiftStartMinute,
-            defaultShiftEndHour: defaultShiftEndHour,
-            defaultShiftEndMinute: defaultShiftEndMinute,
+            minimumWageBandHistory: minimumWageBandHistory,
+            recipeLabourPlanningBand: recipeLabourPlanningBand,
             createdAt: createdAt,
             updatedAt: updatedAt,
             manuallyAdded: manuallyAdded
         )
     }
-} 
+}
