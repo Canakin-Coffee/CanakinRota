@@ -125,6 +125,8 @@ class RotaFirestoreSettingsManager {
         if existing.clockInGeofenceLatitude != new.clockInGeofenceLatitude { existing.clockInGeofenceLatitude = new.clockInGeofenceLatitude; hasChanges = true }
         if existing.clockInGeofenceLongitude != new.clockInGeofenceLongitude { existing.clockInGeofenceLongitude = new.clockInGeofenceLongitude; hasChanges = true }
         if existing.clockInGeofenceRadiusMetres != new.clockInGeofenceRadiusMetres { existing.clockInGeofenceRadiusMetres = new.clockInGeofenceRadiusMetres; hasChanges = true }
+        if existing.minimumBreakDurationMinutes != new.minimumBreakDurationMinutes { existing.minimumBreakDurationMinutes = new.minimumBreakDurationMinutes; hasChanges = true }
+        if existing.maximumBreakDurationHours != new.maximumBreakDurationHours { existing.maximumBreakDurationHours = new.maximumBreakDurationHours; hasChanges = true }
         if existing.pensionRate != new.pensionRate { existing.pensionRate = new.pensionRate; hasChanges = true }
         if existing.minimumHourlyWage != new.minimumHourlyWage { existing.minimumHourlyWage = new.minimumHourlyWage; hasChanges = true }
         if existing.minimumHourlyWageHistoryData != new.minimumHourlyWageHistoryData { existing.minimumHourlyWageHistoryData = new.minimumHourlyWageHistoryData; hasChanges = true }

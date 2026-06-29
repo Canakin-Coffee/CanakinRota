@@ -37,6 +37,8 @@ struct FirebaseEmploymentSettingsDTO: Codable {
     let clockInGeofenceLatitude: Double
     let clockInGeofenceLongitude: Double
     let clockInGeofenceRadiusMetres: Double
+    let minimumBreakDurationMinutes: Int
+    let maximumBreakDurationHours: Int
     let minimumHourlyWage: Double
     let minimumHourlyWageHistory: [MinimumWageRateEntryDTO]
     let minimumWageBandHistory: [MinimumWageBandRateEntryDTO]
@@ -63,6 +65,8 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         clockInGeofenceLatitude: Double = 0,
         clockInGeofenceLongitude: Double = 0,
         clockInGeofenceRadiusMetres: Double = 50,
+        minimumBreakDurationMinutes: Int = 15,
+        maximumBreakDurationHours: Int = 2,
         minimumHourlyWage: Double = 0.0,
         minimumHourlyWageHistory: [MinimumWageRateEntryDTO] = [],
         minimumWageBandHistory: [MinimumWageBandRateEntryDTO] = [],
@@ -88,6 +92,8 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         self.clockInGeofenceLatitude = clockInGeofenceLatitude
         self.clockInGeofenceLongitude = clockInGeofenceLongitude
         self.clockInGeofenceRadiusMetres = clockInGeofenceRadiusMetres
+        self.minimumBreakDurationMinutes = minimumBreakDurationMinutes
+        self.maximumBreakDurationHours = maximumBreakDurationHours
         self.minimumHourlyWage = minimumHourlyWage
         self.minimumHourlyWageHistory = minimumHourlyWageHistory
         self.minimumWageBandHistory = minimumWageBandHistory
@@ -115,6 +121,8 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         self.clockInGeofenceLatitude = employmentSettings.clockInGeofenceLatitude
         self.clockInGeofenceLongitude = employmentSettings.clockInGeofenceLongitude
         self.clockInGeofenceRadiusMetres = employmentSettings.clockInGeofenceRadiusMetres
+        self.minimumBreakDurationMinutes = employmentSettings.resolvedMinimumBreakDurationMinutes
+        self.maximumBreakDurationHours = employmentSettings.resolvedMaximumBreakDurationHours
         self.minimumHourlyWage = employmentSettings.minimumHourlyWage(on: Date())
         self.minimumHourlyWageHistory = employmentSettings.minimumHourlyWageHistory.map {
             MinimumWageRateEntryDTO(effectiveFrom: $0.effectiveFrom, rate: $0.rate)
@@ -152,6 +160,8 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         settings.clockInGeofenceLatitude = clockInGeofenceLatitude
         settings.clockInGeofenceLongitude = clockInGeofenceLongitude
         settings.clockInGeofenceRadiusMetres = clockInGeofenceRadiusMetres
+        settings.minimumBreakDurationMinutes = minimumBreakDurationMinutes
+        settings.maximumBreakDurationHours = maximumBreakDurationHours
         settings.minimumHourlyWageHistory = minimumHourlyWageHistory.map {
             EmploymentSettings.MinimumWageRateEntry(effectiveFrom: $0.effectiveFrom, rate: $0.rate)
         }
@@ -186,6 +196,8 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             "clockInGeofenceLatitude": clockInGeofenceLatitude,
             "clockInGeofenceLongitude": clockInGeofenceLongitude,
             "clockInGeofenceRadiusMetres": clockInGeofenceRadiusMetres,
+            "minimumBreakDurationMinutes": minimumBreakDurationMinutes,
+            "maximumBreakDurationHours": maximumBreakDurationHours,
             "minimumHourlyWage": minimumHourlyWage,
             "minimumHourlyWageHistory": minimumHourlyWageHistory.map { [
                 "effectiveFrom": Timestamp(date: $0.effectiveFrom),
@@ -251,6 +263,16 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             if let value = data["clockInGeofenceRadiusMetres"] as? Double { return value }
             if let value = data["clockInGeofenceRadiusMetres"] as? Int { return Double(value) }
             return 50
+        }()
+        let minimumBreakDurationMinutes: Int = {
+            if let value = data["minimumBreakDurationMinutes"] as? Int { return value }
+            if let value = data["minimumBreakDurationMinutes"] as? Double { return Int(value) }
+            return 15
+        }()
+        let maximumBreakDurationHours: Int = {
+            if let value = data["maximumBreakDurationHours"] as? Int { return value }
+            if let value = data["maximumBreakDurationHours"] as? Double { return Int(value) }
+            return 2
         }()
 
         let minimumHourlyWage = extractDouble("minimumHourlyWage") ?? 0.0
@@ -320,6 +342,8 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             clockInGeofenceLatitude: clockInGeofenceLatitude,
             clockInGeofenceLongitude: clockInGeofenceLongitude,
             clockInGeofenceRadiusMetres: clockInGeofenceRadiusMetres,
+            minimumBreakDurationMinutes: minimumBreakDurationMinutes,
+            maximumBreakDurationHours: maximumBreakDurationHours,
             minimumHourlyWage: minimumHourlyWage,
             minimumHourlyWageHistory: minimumHourlyWageHistory,
             minimumWageBandHistory: minimumWageBandHistory,
