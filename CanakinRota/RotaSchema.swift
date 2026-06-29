@@ -17,6 +17,7 @@ enum RotaSchema {
         BusinessRule.self,
         StaffPreference.self,
         Company.self,
+        Site.self,
         EmploymentSettings.self
     ]
 }
