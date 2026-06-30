@@ -389,8 +389,9 @@ extension FirestoreManager {
     }
 
     func fetchEmploymentSettingsFromFirestore(companyId: String) async throws -> EmploymentSettings? {
-        _ = companyId
-        return try await settingsManager.fetchEmploymentSettingsFromFirestore(settingsId: "default")
+        try await settingsManager.fetchEmploymentSettingsFromFirestore(
+            settingsId: EmploymentSettings.documentId(for: companyId)
+        )
     }
 
     func listenToEmploymentSettings(completion: @escaping ([EmploymentSettings]) -> Void) -> ListenerRegistration {

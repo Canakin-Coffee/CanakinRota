@@ -53,11 +53,19 @@ class RotaFirestoreSettingsManager {
             let legacyDoc = try await db.collection("employmentSettings").document("default").getDocument()
             if legacyDoc.exists, let data = legacyDoc.data(),
                let dto = FirebaseEmploymentSettingsDTO.fromFirestoreData(data, documentId: legacyDoc.documentID) {
-                let settings = dto.toEmploymentSettings()
-                settings.companyId = companyId
-                try await saveEmploymentSettingsToFirestore(settings)
-                return [settings]
+                let legacyCompanyId = dto.companyId
+                if legacyCompanyId == nil || legacyCompanyId == companyId {
+                    let settings = dto.toEmploymentSettings()
+                    settings.id = EmploymentSettings.documentId(for: companyId)
+                    settings.companyId = companyId
+                    try await saveEmploymentSettingsToFirestore(settings)
+                    return [settings]
+                }
             }
+
+            let defaults = EmploymentSettings.createDefault(forCompanyId: companyId)
+            try await saveEmploymentSettingsToFirestore(defaults)
+            return [defaults]
         }
 
         return documents.compactMap { document in
@@ -102,8 +110,11 @@ class RotaFirestoreSettingsManager {
 
         if hasChanges {
             try? modelContext.save()
-            if let first = (try? modelContext.fetch(descriptor))?.first {
-                EmploymentSettingsStore.shared.currentSettings = first
+            if let companyId = CompanyContext.shared.currentCompany?.id,
+               let match = (try? modelContext.fetch(descriptor))?.first(where: {
+                   $0.companyId == companyId || $0.id == EmploymentSettings.documentId(for: companyId)
+               }) {
+                EmploymentSettingsStore.shared.currentSettings = match
             }
         }
     }
@@ -131,7 +142,9 @@ class RotaFirestoreSettingsManager {
         if existing.minimumHourlyWage != new.minimumHourlyWage { existing.minimumHourlyWage = new.minimumHourlyWage; hasChanges = true }
         if existing.minimumHourlyWageHistoryData != new.minimumHourlyWageHistoryData { existing.minimumHourlyWageHistoryData = new.minimumHourlyWageHistoryData; hasChanges = true }
         if existing.minimumWageBandHistoryData != new.minimumWageBandHistoryData { existing.minimumWageBandHistoryData = new.minimumWageBandHistoryData; hasChanges = true }
+        if existing.minimumWageBandDefinitionsData != new.minimumWageBandDefinitionsData { existing.minimumWageBandDefinitionsData = new.minimumWageBandDefinitionsData; hasChanges = true }
         if existing.recipeLabourPlanningBandRaw != new.recipeLabourPlanningBandRaw { existing.recipeLabourPlanningBandRaw = new.recipeLabourPlanningBandRaw; hasChanges = true }
+        if existing.recipeLabourRateModeRaw != new.recipeLabourRateModeRaw { existing.recipeLabourRateModeRaw = new.recipeLabourRateModeRaw; hasChanges = true }
         if existing.updatedAt != new.updatedAt { existing.updatedAt = new.updatedAt; hasChanges = true }
         if existing.companyId != new.companyId { existing.companyId = new.companyId; hasChanges = true }
 

@@ -20,6 +20,14 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         let rate: Double
     }
 
+    struct MinimumWageBandDefinitionDTO: Codable {
+        let id: String
+        let name: String
+        let sortOrder: Int
+        let minAgeYears: Int?
+        let maxAgeYears: Int?
+    }
+
     let id: String
     let companyId: String?
     let employerNIRate: Double
@@ -42,11 +50,13 @@ struct FirebaseEmploymentSettingsDTO: Codable {
     let minimumHourlyWage: Double
     let minimumHourlyWageHistory: [MinimumWageRateEntryDTO]
     let minimumWageBandHistory: [MinimumWageBandRateEntryDTO]
+    let minimumWageBandDefinitions: [MinimumWageBandDefinitionDTO]
     let recipeLabourPlanningBand: String
+    let recipeLabourRateMode: String
     let createdAt: Date
     let updatedAt: Date
     let manuallyAdded: Bool
-    
+
     init(
         id: String,
         companyId: String?,
@@ -70,7 +80,9 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         minimumHourlyWage: Double = 0.0,
         minimumHourlyWageHistory: [MinimumWageRateEntryDTO] = [],
         minimumWageBandHistory: [MinimumWageBandRateEntryDTO] = [],
-        recipeLabourPlanningBand: String = MinimumWageAgeBand.age21AndOver.rawValue,
+        minimumWageBandDefinitions: [MinimumWageBandDefinitionDTO] = [],
+        recipeLabourPlanningBand: String = MinimumWageBandDefinition.defaultPrimaryBandId,
+        recipeLabourRateMode: String = RecipeLabourRateMode.loaded.rawValue,
         createdAt: Date,
         updatedAt: Date,
         manuallyAdded: Bool
@@ -97,12 +109,14 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         self.minimumHourlyWage = minimumHourlyWage
         self.minimumHourlyWageHistory = minimumHourlyWageHistory
         self.minimumWageBandHistory = minimumWageBandHistory
+        self.minimumWageBandDefinitions = minimumWageBandDefinitions
         self.recipeLabourPlanningBand = recipeLabourPlanningBand
+        self.recipeLabourRateMode = recipeLabourRateMode
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.manuallyAdded = manuallyAdded
     }
-    
+
     init(from employmentSettings: EmploymentSettings) {
         self.id = employmentSettings.id
         self.companyId = employmentSettings.companyId
@@ -130,12 +144,23 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         self.minimumWageBandHistory = employmentSettings.minimumWageBandHistory.map {
             MinimumWageBandRateEntryDTO(band: $0.bandRaw, effectiveFrom: $0.effectiveFrom, rate: $0.rate)
         }
-        self.recipeLabourPlanningBand = employmentSettings.recipeLabourPlanningBandRaw
+        employmentSettings.ensureWageBandDefinitionsPersisted()
+        self.minimumWageBandDefinitions = employmentSettings.wageBandDefinitions.map {
+            MinimumWageBandDefinitionDTO(
+                id: $0.id,
+                name: $0.name,
+                sortOrder: $0.sortOrder,
+                minAgeYears: $0.minAgeYears,
+                maxAgeYears: $0.maxAgeYears
+            )
+        }
+        self.recipeLabourPlanningBand = employmentSettings.recipeLabourPlanningBandId
+        self.recipeLabourRateMode = employmentSettings.recipeLabourRateModeRaw
         self.createdAt = employmentSettings.createdAt
         self.updatedAt = employmentSettings.updatedAt
         self.manuallyAdded = employmentSettings.manuallyAdded
     }
-    
+
     func toEmploymentSettings() -> EmploymentSettings {
         let settings = EmploymentSettings(
             id: id,
@@ -166,9 +191,23 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             EmploymentSettings.MinimumWageRateEntry(effectiveFrom: $0.effectiveFrom, rate: $0.rate)
         }
         settings.minimumWageBandHistory = minimumWageBandHistory.map {
-            MinimumWageBandRateEntry(band: MinimumWageAgeBand(rawValue: $0.band) ?? .age21AndOver, effectiveFrom: $0.effectiveFrom, rate: $0.rate)
+            MinimumWageBandRateEntry(bandId: $0.band, effectiveFrom: $0.effectiveFrom, rate: $0.rate)
         }
-        settings.recipeLabourPlanningBandRaw = recipeLabourPlanningBand
+        if !minimumWageBandDefinitions.isEmpty {
+            settings.wageBandDefinitions = minimumWageBandDefinitions.map {
+                MinimumWageBandDefinition(
+                    id: $0.id,
+                    name: $0.name,
+                    sortOrder: $0.sortOrder,
+                    minAgeYears: $0.minAgeYears,
+                    maxAgeYears: $0.maxAgeYears
+                )
+            }
+        } else {
+            settings.ensureWageBandDefinitionsPersisted()
+        }
+        settings.recipeLabourPlanningBandId = recipeLabourPlanningBand
+        settings.recipeLabourRateModeRaw = recipeLabourRateMode
         if settings.minimumHourlyWageHistory.isEmpty {
             settings.minimumHourlyWage = minimumHourlyWage
         } else {
@@ -176,7 +215,7 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         }
         return settings
     }
-    
+
     func toFirestoreData() -> [String: Any] {
         return [
             "id": id,
@@ -208,19 +247,30 @@ struct FirebaseEmploymentSettingsDTO: Codable {
                 "effectiveFrom": Timestamp(date: $0.effectiveFrom),
                 "rate": $0.rate
             ] },
+            "minimumWageBandDefinitions": minimumWageBandDefinitions.map { band in
+                var payload: [String: Any] = [
+                    "id": band.id,
+                    "name": band.name,
+                    "sortOrder": band.sortOrder,
+                ]
+                if let minAgeYears = band.minAgeYears { payload["minAgeYears"] = minAgeYears }
+                if let maxAgeYears = band.maxAgeYears { payload["maxAgeYears"] = maxAgeYears }
+                return payload
+            },
             "recipeLabourPlanningBand": recipeLabourPlanningBand,
+            "recipeLabourRateMode": recipeLabourRateMode,
             "createdAt": Timestamp(date: createdAt),
             "updatedAt": Timestamp(date: updatedAt),
             "manuallyAdded": manuallyAdded
         ]
     }
-    
+
     static func fromFirestoreData(_ data: [String: Any], documentId: String) -> FirebaseEmploymentSettingsDTO? {
         guard let id = data["id"] as? String else {
             AppLog.sync.error("Employment Settings: Missing 'id' field in document \(documentId)")
             return nil
         }
-        
+
         func extractDouble(_ key: String) -> Double? {
             if let doubleValue = data[key] as? Double {
                 return doubleValue
@@ -230,7 +280,7 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             AppLog.sync.error("Employment Settings: Missing or invalid '\(key)' field (got: \(String(describing: data[key])))")
             return nil
         }
-        
+
         func extractInt(_ key: String) -> Int? {
             if let intValue = data[key] as? Int {
                 return intValue
@@ -240,7 +290,7 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             AppLog.sync.error("Employment Settings: Missing or invalid '\(key)' field (got: \(String(describing: data[key])))")
             return nil
         }
-        
+
         let holidayAccrualRate = extractDouble("holidayAccrualRate") ?? 0.1207
         let timeOffCountsAllCalendarDays = data["timeOffCountsAllCalendarDays"] as? Bool ?? false
         let payrollRunDay: Int = {
@@ -303,7 +353,35 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             return MinimumWageBandRateEntryDTO(band: band, effectiveFrom: date, rate: rate)
         }
 
-        let recipeLabourPlanningBand = data["recipeLabourPlanningBand"] as? String ?? MinimumWageAgeBand.age21AndOver.rawValue
+        let minimumWageBandDefinitions: [MinimumWageBandDefinitionDTO] = (data["minimumWageBandDefinitions"] as? [[String: Any]] ?? []).compactMap { item in
+            guard let id = item["id"] as? String,
+                  let name = item["name"] as? String else { return nil }
+            let sortOrder: Int = {
+                if let value = item["sortOrder"] as? Int { return value }
+                if let value = item["sortOrder"] as? Double { return Int(value) }
+                return 0
+            }()
+            let minAgeYears: Int? = {
+                if let value = item["minAgeYears"] as? Int { return value }
+                if let value = item["minAgeYears"] as? Double { return Int(value) }
+                return nil
+            }()
+            let maxAgeYears: Int? = {
+                if let value = item["maxAgeYears"] as? Int { return value }
+                if let value = item["maxAgeYears"] as? Double { return Int(value) }
+                return nil
+            }()
+            return MinimumWageBandDefinitionDTO(
+                id: id,
+                name: name,
+                sortOrder: sortOrder,
+                minAgeYears: minAgeYears,
+                maxAgeYears: maxAgeYears
+            )
+        }
+
+        let recipeLabourPlanningBand = data["recipeLabourPlanningBand"] as? String ?? MinimumWageBandDefinition.defaultPrimaryBandId
+        let recipeLabourRateMode = data["recipeLabourRateMode"] as? String ?? RecipeLabourRateMode.loaded.rawValue
 
         guard let employerNIRate = extractDouble("employerNIRate"),
               let niThresholdPerYear = extractDouble("niThresholdPerYear"),
@@ -317,13 +395,13 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             AppLog.sync.error("Employment Settings: Failed to parse document \(documentId) - one or more required fields missing")
             return nil
         }
-        
+
         let createdAt = (data["createdAt"] as? Timestamp)?.dateValue() ?? Date()
         let updatedAt = (data["updatedAt"] as? Timestamp)?.dateValue() ?? Date()
         let companyId = data["companyId"] as? String
-        
-        AppLog.sync.info("Employment Settings parsed successfully: employerNIRate=\(employerNIRate), niThreshold=\(niThresholdPerYear)")
-        
+
+        AppLog.sync.debug("Employment Settings parsed: employerNIRate=\(employerNIRate), niThreshold=\(niThresholdPerYear)")
+
         return FirebaseEmploymentSettingsDTO(
             id: id,
             companyId: companyId,
@@ -347,7 +425,9 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             minimumHourlyWage: minimumHourlyWage,
             minimumHourlyWageHistory: minimumHourlyWageHistory,
             minimumWageBandHistory: minimumWageBandHistory,
+            minimumWageBandDefinitions: minimumWageBandDefinitions,
             recipeLabourPlanningBand: recipeLabourPlanningBand,
+            recipeLabourRateMode: recipeLabourRateMode,
             createdAt: createdAt,
             updatedAt: updatedAt,
             manuallyAdded: manuallyAdded
