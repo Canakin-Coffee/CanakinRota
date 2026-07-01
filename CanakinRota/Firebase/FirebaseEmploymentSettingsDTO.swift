@@ -24,8 +24,6 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         let id: String
         let name: String
         let sortOrder: Int
-        let minAgeYears: Int?
-        let maxAgeYears: Int?
     }
 
     let id: String
@@ -81,7 +79,7 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         minimumHourlyWageHistory: [MinimumWageRateEntryDTO] = [],
         minimumWageBandHistory: [MinimumWageBandRateEntryDTO] = [],
         minimumWageBandDefinitions: [MinimumWageBandDefinitionDTO] = [],
-        recipeLabourPlanningBand: String = MinimumWageBandDefinition.defaultPrimaryBandId,
+        recipeLabourPlanningBand: String = StandardPayRate.defaultPrimaryRateId,
         recipeLabourRateMode: String = RecipeLabourRateMode.loaded.rawValue,
         createdAt: Date,
         updatedAt: Date,
@@ -149,9 +147,7 @@ struct FirebaseEmploymentSettingsDTO: Codable {
             MinimumWageBandDefinitionDTO(
                 id: $0.id,
                 name: $0.name,
-                sortOrder: $0.sortOrder,
-                minAgeYears: $0.minAgeYears,
-                maxAgeYears: $0.maxAgeYears
+                sortOrder: $0.sortOrder
             )
         }
         self.recipeLabourPlanningBand = employmentSettings.recipeLabourPlanningBandId
@@ -195,12 +191,10 @@ struct FirebaseEmploymentSettingsDTO: Codable {
         }
         if !minimumWageBandDefinitions.isEmpty {
             settings.wageBandDefinitions = minimumWageBandDefinitions.map {
-                MinimumWageBandDefinition(
+                StandardPayRate(
                     id: $0.id,
                     name: $0.name,
-                    sortOrder: $0.sortOrder,
-                    minAgeYears: $0.minAgeYears,
-                    maxAgeYears: $0.maxAgeYears
+                    sortOrder: $0.sortOrder
                 )
             }
         } else {
@@ -247,15 +241,12 @@ struct FirebaseEmploymentSettingsDTO: Codable {
                 "effectiveFrom": Timestamp(date: $0.effectiveFrom),
                 "rate": $0.rate
             ] },
-            "minimumWageBandDefinitions": minimumWageBandDefinitions.map { band in
-                var payload: [String: Any] = [
-                    "id": band.id,
-                    "name": band.name,
-                    "sortOrder": band.sortOrder,
-                ]
-                if let minAgeYears = band.minAgeYears { payload["minAgeYears"] = minAgeYears }
-                if let maxAgeYears = band.maxAgeYears { payload["maxAgeYears"] = maxAgeYears }
-                return payload
+            "minimumWageBandDefinitions": minimumWageBandDefinitions.map { rate in
+                [
+                    "id": rate.id,
+                    "name": rate.name,
+                    "sortOrder": rate.sortOrder,
+                ] as [String: Any]
             },
             "recipeLabourPlanningBand": recipeLabourPlanningBand,
             "recipeLabourRateMode": recipeLabourRateMode,
@@ -361,26 +352,14 @@ struct FirebaseEmploymentSettingsDTO: Codable {
                 if let value = item["sortOrder"] as? Double { return Int(value) }
                 return 0
             }()
-            let minAgeYears: Int? = {
-                if let value = item["minAgeYears"] as? Int { return value }
-                if let value = item["minAgeYears"] as? Double { return Int(value) }
-                return nil
-            }()
-            let maxAgeYears: Int? = {
-                if let value = item["maxAgeYears"] as? Int { return value }
-                if let value = item["maxAgeYears"] as? Double { return Int(value) }
-                return nil
-            }()
             return MinimumWageBandDefinitionDTO(
                 id: id,
                 name: name,
-                sortOrder: sortOrder,
-                minAgeYears: minAgeYears,
-                maxAgeYears: maxAgeYears
+                sortOrder: sortOrder
             )
         }
 
-        let recipeLabourPlanningBand = data["recipeLabourPlanningBand"] as? String ?? MinimumWageBandDefinition.defaultPrimaryBandId
+        let recipeLabourPlanningBand = data["recipeLabourPlanningBand"] as? String ?? StandardPayRate.defaultPrimaryRateId
         let recipeLabourRateMode = data["recipeLabourRateMode"] as? String ?? RecipeLabourRateMode.loaded.rawValue
 
         guard let employerNIRate = extractDouble("employerNIRate"),
