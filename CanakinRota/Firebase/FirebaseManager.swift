@@ -58,6 +58,7 @@ class FirebaseManager: ObservableObject {
         isSyncing = true
         syncProgress = 0.0
         
+        firestoreManager.stopAllListeners()
         firestoreManager.setupRealTimeListeners(modelContext: modelContext)
         
         lastSyncDate = Date()
@@ -68,6 +69,7 @@ class FirebaseManager: ObservableObject {
     }
     
     func stopRealTimeSync() {
+        firestoreManager.stopAllListeners()
         isSyncing = false
         syncProgress = 0.0
     }
