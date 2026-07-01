@@ -59,7 +59,6 @@ struct SettingsTabView: View {
             Button("Cancel", role: .cancel) {}
             Button("Sign Out", role: .destructive) {
                 authorityManager.signOut(modelContext: modelContext)
-                onSignOut()
             }
         } message: {
             Text("You will need to sign in again to access the rota.")

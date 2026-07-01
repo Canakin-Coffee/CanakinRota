@@ -169,6 +169,9 @@ struct MainAppView: View {
             // Use .task instead of .onAppear to ensure async execution doesn't block UI
             await checkCompanyFile()
         }
+        .onAppear {
+            CanakinStaffSharedConfig.onSignOutCompleted = { handleSignOut() }
+        }
         .onReceive(notificationCenter.publisher(for: .didRequestLogout)) { _ in
             handleLogoutRequest()
         }
