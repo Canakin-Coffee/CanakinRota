@@ -19,6 +19,7 @@ struct SignInView: View {
     @State private var showingPasswordReset = false
     @State private var showingSignUp = false
     @State private var downloadProgress = ""
+    @State private var didAttemptAutoSignIn = false
     
     private let firebaseManager = FirebaseManager.shared
     private let firestoreManager = FirestoreManager.shared
@@ -114,7 +115,12 @@ struct SignInView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .navigationBarHidden(true)
-            .onAppear(perform: loadSavedCredentials)
+            .task {
+                loadSavedCredentials()
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                guard !authorityManager.isAuthenticated else { return }
+                await attemptAutoSignInIfNeeded()
+            }
             .alert("Sign In Error", isPresented: $showingAlert) {
                 Button("OK") { }
             } message: {
@@ -210,8 +216,20 @@ struct SignInView: View {
     }
 
     private func saveSavedCredentials(email: String, password: String) {
-        UserDefaults.standard.set(email, forKey: "lastSignedInEmail")
-        _ = keychainManager.savePassword(password, for: email)
+        let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        UserDefaults.standard.set(normalizedEmail, forKey: "lastSignedInEmail")
+        _ = keychainManager.savePassword(password, for: normalizedEmail)
+    }
+
+    private func attemptAutoSignInIfNeeded() async {
+        guard !didAttemptAutoSignIn else { return }
+        guard Auth.auth().currentUser == nil else { return }
+        guard isFormValid, !isLoading else { return }
+
+        didAttemptAutoSignIn = true
+        let cleanEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
+        await performLogin(email: cleanEmail, password: cleanPassword)
     }
     
     /// Simplified sign-in function

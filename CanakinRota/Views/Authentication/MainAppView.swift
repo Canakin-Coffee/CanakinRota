@@ -299,10 +299,22 @@ struct MainAppView: View {
             print("🔐 MAINAPP: Found existing Firebase session for: \(firebaseUser.email ?? "unknown")")
             
             do {
-                // Find user document by email
                 let db = Firestore.firestore()
-                let userQuery = db.collection("users").whereField("email", isEqualTo: firebaseUser.email ?? "")
-                let userQuerySnapshot = try await userQuery.getDocuments()
+                let uidQuery = try await db.collection("users")
+                    .whereField("firebaseUID", isEqualTo: firebaseUser.uid)
+                    .limit(to: 1)
+                    .getDocuments()
+
+                let userQuerySnapshot: QuerySnapshot
+                if !uidQuery.documents.isEmpty {
+                    userQuerySnapshot = uidQuery
+                } else {
+                    let email = (firebaseUser.email ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                    userQuerySnapshot = try await db.collection("users")
+                        .whereField("email", isEqualTo: email)
+                        .limit(to: 1)
+                        .getDocuments()
+                }
                 
                 if !userQuerySnapshot.documents.isEmpty {
                     let userDoc = userQuerySnapshot.documents.first!
