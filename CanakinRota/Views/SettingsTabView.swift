@@ -39,7 +39,7 @@ struct SettingsTabView: View {
 
             if authorityManager.canManageEmploymentDetails() {
                 Section("Company Settings") {
-                    NavigationLink("Settings") {
+                    NavigationLink("Employment Settings") {
                         EmploymentSettingsEntryView()
                     }
                 }
